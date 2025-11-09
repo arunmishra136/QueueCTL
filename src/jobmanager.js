@@ -18,12 +18,22 @@ export const addJob = (job) => {
 };
 
  
-export const getPendingJob = () =>
-  db
-    .prepare(
-      `SELECT * FROM jobs WHERE state='pending' ORDER BY created_at LIMIT 1`
+export const getPendingJob = () => {
+  const stmt = db.prepare(`
+    UPDATE jobs
+    SET state = 'processing', updated_at = datetime('now')
+    WHERE id = (
+      SELECT id FROM jobs
+      WHERE state = 'pending'
+      ORDER BY created_at
+      LIMIT 1
     )
-    .get();
+    RETURNING *;
+  `);
+
+  const job = stmt.get();
+  return job;
+};
 
  
 export const updateJobState = (id, state) =>

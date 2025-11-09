@@ -32,14 +32,14 @@ export const startWorkers = async (count = 1, base = 2) => {
 
       try {
         await execAsync(job.command);
-        console.log(` Job ${job.id} completed`);
+        console.log(` Job_id: ${job.id} completed`);
         updateJobState(job.id, "completed");
       } catch (err) {
-        console.log(` Job ${job.id} failed (attempt ${job.attempts + 1})`);
+        console.log(` Job_id: ${job.id} failed (attempt ${job.attempts + 1})`);
         incrementAttempts(job.id);
 
         if (job.attempts + 1 >= job.max_retries) {
-          console.log(` Job ${job.id} moved to DLQ`);
+          console.log(` Job_id: ${job.id} moved to DLQ`);
           moveToDLQ(job.id, err.message || "Execution failed");
         } else {
           const delay = exponentialBackoff(base, job.attempts + 1);
