@@ -1,130 +1,164 @@
-============================================================
-## queuectl — Background Job Queue CLI (Node.js + SQLite) ##
-============================================================
 
-A CLI-based background job queue system built using Node.js, Commander.js, and SQLite.  
-Supports multiple workers, retries with exponential backoff, and a Dead Letter Queue (DLQ).  
-Jobs persist across restarts, and duplicate processing is prevented using atomic SQL updates.
+# Queuectl — Background Job Queue CLI (Node.js + SQLite)
 
-------------------------------------------------------------
-# 1️. SETUP INSTRUCTIONS
-------------------------------------------------------------
+A **CLI-based background job queue system** built using **Node.js**, **Commander.js**, and **SQLite**.  
+It supports **multiple workers**, **automatic retries with exponential backoff**, and a **Dead Letter Queue (DLQ)**.  
+Jobs persist across restarts, and duplicate processing is prevented using **atomic SQL updates**.
 
-# Clone and install
+---
+
+#  1. Setup Instructions
+
+###  Clone and install
+```bash
 git clone https://github.com/arunmishra136/QueueCTL.git
 cd queuectl
 npm install
+```
 
-# (Optional) Link globally
+###  (Optional) Link globally
+```bash
 npm link
-# Now you can run commands directly with:
+```
+
+Now you can run commands directly using:
+```bash
 queuectl --help
-# or use:
+```
+or
+```bash
 node bin/queuectl.js <command>
+```
 
-------------------------------------------------------------
-# 2️. USAGE EXAMPLES
-------------------------------------------------------------
+---
 
-# Enqueue jobs
+#  2. Usage Examples
+
+###  Enqueue Jobs
+```bash
 queuectl enqueue "{\"id\":\"job1\",\"command\":\"echo Hello\"}"
 queuectl enqueue "{\"id\":\"job2\",\"command\":\"timeout /T 2\"}"
+```
 
-# Start and stop workers
+###  Start / Stop Workers
+```bash
 queuectl worker:start --count 3
 queuectl worker:stop
+```
 
-# Check job status
+###  Check Job Status
+```bash
 queuectl status
+```
 
-# List jobs
+###  List Jobs
+```bash
 queuectl list --state pending
 queuectl list --state completed
+```
 
-# Dead Letter Queue (DLQ)
+###  Dead Letter Queue (DLQ)
+```bash
 queuectl dlq:list
 queuectl dlq:retry job3
+```
 
-# Configuration
+###  Configuration
+```bash
 queuectl config:get
 queuectl config:set max_retries 5
+```
 
-------------------------------------------------------------
-# 3️. ARCHITECTURE OVERVIEW
-------------------------------------------------------------
+---
 
-• Jobs are stored in a local SQLite database with fields:
-  id, command, state, attempts, max_retries, created_at, updated_at.
+#  3. Architecture Overview
 
-• Job lifecycle:
-  pending → processing → completed / failed → dead (DLQ).
+###  Core Concepts
+- Jobs are stored in **SQLite** with fields:  
+  `id`, `command`, `state`, `attempts`, `max_retries`, `created_at`, `updated_at`.
 
-• Workers:
-  - Execute shell commands using Node’s child_process.exec.
-  - Update job state atomically (no duplicates).
-  - Retry failed jobs with exponential backoff: delay = base ^ attempts.
-  - Move jobs to DLQ after retries exhausted.
+###  Job Lifecycle
+`pending → processing → completed / failed → dead (DLQ)`
 
-• DLQ:
-  - Stores permanently failed jobs.
-  - Retry them manually via CLI.
+###  Worker Behavior
+- Executes shell commands using Node’s `child_process.exec`.
+- Updates job state atomically (no duplicates).
+- Retries failed jobs with **exponential backoff** (`delay = base ^ attempts`).
+- Moves jobs to DLQ after all retries fail.
 
-• Persistence:
-  - SQLite ensures all jobs persist across restarts.
-  - Atomic SQL updates prevent race conditions.
+###  Dead Letter Queue
+- Stores permanently failed jobs.
+- Can be retried manually via CLI.
 
-------------------------------------------------------------
-# 4️. ASSUMPTIONS & TRADE-OFFS
-------------------------------------------------------------
+###  Persistence
+- SQLite ensures jobs **persist across restarts**.
+- Atomic SQL prevents **race conditions** or duplicate job execution.
 
-| Area             | Decision / Simplification |
-|------------------|---------------------------|
-| Database         | SQLite for simplicity and durability |
-| Job Locking      | Atomic SQL (UPDATE ... RETURNING) |
-| Retry Strategy   | Exponential backoff (base ^ attempts) |
-| DLQ Storage      | Separate table for clarity |
-| Command Handling | Executes system shell commands |
-| OS Limitation    | Uses Windows-safe commands like `timeout /T` |
-| Skipped Feature  | Scheduled jobs (`run_at`) — optional bonus |
+---
 
-------------------------------------------------------------
-# 5️. TESTING INSTRUCTIONS
-------------------------------------------------------------
+#  4. Assumptions & Trade-offs
 
-# Start fresh
+| Area | Decision / Simplification |
+|------|----------------------------|
+| Database | SQLite for simplicity and persistence |
+| Job Locking | Atomic SQL (`UPDATE ... RETURNING`) |
+| Retry Strategy | Exponential backoff (`base ^ attempts`) |
+| DLQ Storage | Separate table for clarity |
+| Command Handling | System shell commands via Node |
+| OS Compatibility | Windows-safe commands (`timeout /T`) |
+
+---
+
+#  5. Testing Instructions
+
+###  Start Fresh
+```bash
 rm -f jobs.db
+```
 
-# Add jobs
+###  Add Jobs
+```bash
 queuectl enqueue "{\"id\":\"jobA\",\"command\":\"echo Hi\"}"
 queuectl enqueue "{\"id\":\"jobB\",\"command\":\"timeout /T 2\"}"
 queuectl enqueue "{\"id\":\"jobC\",\"command\":\"badcmd\"}"
+```
 
-# Start workers
+###  Start Workers
+```bash
 queuectl worker:start --count 3
+```
 
-# Expected output:
-#  Starting 3 worker(s)...
-# Worker 1 picked job: jobA
-#  Job jobA completed
-# Worker 2 picked job: jobB
-#  Job jobB completed
-#  Job jobC failed (3 attempts)
-#  Job jobC moved to DLQ
+####  Expected Output:
+```
+ Starting 3 worker(s)...
+Worker 1 picked job: jobA
+✅ Job jobA completed
+Worker 2 picked job: jobB
+✅ Job jobB completed
+ Job jobC failed (3 attempts)
+ Job jobC moved to DLQ
+```
 
-# Check results
+###  Check Results
+```bash
 queuectl status
 queuectl dlq:list
+```
 
-# Verify DLQ retry
+###  Retry DLQ Job
+```bash
 queuectl dlq:retry jobC
 queuectl list --state pending
+```
 
-------------------------------------------------------------
-# FUTURE ENHANCEMENTS
-------------------------------------------------------------
-- Scheduled / delayed jobs (run_at)
-- Job timeout cancellation
-- Output logging
-- Job priority levels
-- Simple web dashboard
+---
 
+#  Future Enhancements
+
+-  Scheduled / delayed jobs (`run_at`)
+-  Job timeout & cancellation
+-  Output logging
+-  Priority-based queues
+-  Web dashboard or REST API
+
+---
