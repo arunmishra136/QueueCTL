@@ -54,7 +54,7 @@ export const startWorkers = async (count = 1, base = 2) => {
 
       try {
         await execAsync(job.command);
-        console.log(` Job_id: ${job.id} completed`);
+        console.log(`✅ Job_id: ${job.id} completed`);
         updateJobState(job.id, "completed");
       } catch (err) {
         console.log(` Job_id: ${job.id} failed (attempt ${job.attempts + 1})`);
