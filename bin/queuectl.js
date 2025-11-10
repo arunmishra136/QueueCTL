@@ -22,7 +22,7 @@ program
   .command("enqueue <jobJson>")
   .description("Add a new job to the queue")
   .action((jobJson) => {
-    console.log("Raw input:", jobJson);  
+    //console.log("Raw input:", jobJson);  
     try {
       const job = JSON.parse(jobJson);
       addJob(job);
