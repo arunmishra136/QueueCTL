@@ -1,5 +1,7 @@
 import { exec } from "child_process";
 import { promisify } from "util";
+import fs from "fs";
+
 import { exponentialBackoff, sleep } from "./utils.js";
 import {
   getPendingJob,
@@ -9,18 +11,38 @@ import {
 } from "./jobmanager.js";
 
 const execAsync = promisify(exec);
-let shouldStop = false;
+
+
+const STOP_FILE = "stop.flag";
+
+export const shouldStop = () => fs.existsSync(STOP_FILE);
+
+export const writeStopFlag = () => {
+  fs.writeFileSync(STOP_FILE, "stop");
+};
+
+export const clearStopFlag = () => {
+  if (fs.existsSync(STOP_FILE)) fs.unlinkSync(STOP_FILE);
+};
+
 
 export const stopWorkers = () => {
-  console.log(" Stopping workers gracefully...");
-  shouldStop = true;
+  writeStopFlag();
+  console.log(" Stop signal written. Workers will exit after current jobs.");
 };
 
 export const startWorkers = async (count = 1, base = 2) => {
+  clearStopFlag();
   console.log(` Starting ${count} worker(s)...`);
 
   const runWorker = async (id) => {
-    while (!shouldStop) {
+    while (true) {
+     //Check stop flag
+      if (shouldStop()) {
+        console.log(`Worker ${id} detected stop signal, exiting...`);
+        break;
+      }
+
       const job = getPendingJob();
       if (!job) {
         await sleep(1000);
