@@ -1,0 +1,30 @@
+queuectl enqueue "{\"id\":\"job1\",\"command\":\"node -e \\\"setTimeout(()=>{},5000)\\\"\"}"
+queuectl enqueue "{\"id\":\"job2\",\"command\":\"node -e \\\"setTimeout(()=>{},5000)\\\"\"}"
+queuectl enqueue "{\"id\":\"job3\",\"command\":\"node -e \\\"setTimeout(()=>{},5000)\\\"\"}"
+queuectl enqueue "{\"id\":\"job4\",\"command\":\"node -e \\\"setTimeout(()=>{},5000)\\\"\"}"
+queuectl enqueue "{\"id\":\"job5\",\"command\":\"node -e \\\"setTimeout(()=>{},5000)\\\"\"}"
+queuectl enqueue "{\"id\":\"job6\",\"command\":\"node -e \\\"setTimeout(()=>{},5000)\\\"\"}"
+queuectl enqueue "{\"id\":\"job7\",\"command\":\"node -e \\\"setTimeout(()=>{},5000)\\\"\"}"
+
+queuectl worker:start --count 1
+queuectl worker:stop
+
+
+//start
+
+queuectl enqueue "{\"id\":\"job1\",\"command\":\"cmd /C echo Hello\"}"
+queuectl enqueue "{\"id\":\"job2\",\"command\":\"node -e \\\"setTimeout(()=>{},5000)\\\"\"}"
+queuectl enqueue "{\"id\":\"job3\",\"command\":\"badcmd\"}"
+queuectl list --state pending
+
+queuectl worker:start --count 2
+
+queuectl dlq:list
+
+queuectl config:get
+queuectl config:set max_retries 5
+queuectl config:get
+
+
+
+
