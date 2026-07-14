@@ -5,8 +5,6 @@ A **CLI-based background job queue system** built using **Node.js**, **Commander
 It supports **multiple workers**, **automatic retries with exponential backoff**, and a **Dead Letter Queue (DLQ)**.  
 Jobs persist across restarts, and duplicate processing is prevented using **atomic SQL updates**.
 
----
-# Demo Video Link : https://drive.google.com/file/d/1Lb9hxImAEc_AcjkonmKrEZ-IKN2WhLij/view?usp=sharing
 
 #  1. Setup Instructions
 
